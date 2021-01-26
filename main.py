@@ -1,4 +1,6 @@
 from tkinter import *
+from tkinter import ttk
+from tkinter import messagebox
 import sqlite3
 
 from todo_list import Todo_list
@@ -16,9 +18,15 @@ def main():
 
     todo_list = Todo_list()
 
+    entry1 = ttk.Entry(root)
+    label1 = ttk.Label(root, text = '< Name of the label >')
 
-    def write_file(todo):
+
+    def write_file():
+        todo = e1.get()
         status = 1
+        if len(todo)==0:
+            messagebox.showinfo('Empty Entry', 'Enter task name')
         try:
             with connection as con:
                 cur = con.cursor()
@@ -30,9 +38,12 @@ def main():
                 cur.execute("INSERT INTO todo VALUES (?, ?, ?);", (number, status, todo))
         except IOError:
             print("Unable to open database")
-
-    todo = input("please enter a new todo")
-    write_file(todo)
+        e1.delete(0,'end')
+        listUpdate()
+    
+    def listUpdate():
+        todo_list.del_todos()
+        draw_canvas()
 
     def read_file():
         done = "[x]"
@@ -50,11 +61,41 @@ def main():
         except IOError:
             print("Unable to open database")
 
-    read_file()
-    todo_list.draw(canvas)
+    def bye():
+        root.destroy()
+    
+    def delete_all():
+        try:
+            with connection as con:
+                cur = con.cursor()
+                cur.execute("DELETE from todo")
+        except IOError:
+            print("Unable to open database")
+        canvas.delete('all')
+        listUpdate()
+
+
+    l1 = ttk.Label(root, text = 'To-Do List', font=('freemono bold',20),anchor=NW)
+    l2 = ttk.Label(root, text='Enter task title: ')
+    e1 = ttk.Entry(root, width=51)
+    b1 = ttk.Button(root, text='Add task', width=50, command=write_file)
+    b3 = ttk.Button(root, text='Delete all', width=50, command=delete_all)
+    b4 = ttk.Button(root, text='Exit', width=50, command=bye)
+
+
+    def draw_canvas():
+        read_file()
+        todo_list.draw(canvas)
+
+    draw_canvas()
 
     canvas.pack()
-
+    l2.place(x=80, y=50)
+    e1.place(x=80, y=80)
+    b1.place(x=80, y=110)
+    b3.place(x=80, y=170)
+    b4.place(x=80, y =200)
+    l1.place(x=80, y=10)
     root.mainloop()
     
 

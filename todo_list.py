@@ -12,10 +12,13 @@ class Todo_list():
         self.todos.append(todo)
 
     def draw(self, canvas):
-        for todo in self.todos:
-            canvas.create_rectangle(0, 0, 600, 30, fill = "grey")
+        for i, todo in enumerate(self.todos):
+            canvas.create_rectangle(400, (i+30)*30, 800, (i+1)*30)
             text = f"No.:  {todo.todo_number} Status: {todo.todo_status} | Text: {todo.todo_text}"
-            canvas_text = canvas.create_text(10, 10, text=text, font=('freemono bold',11),anchor=NW)
+            canvas_text = canvas.create_text((400, (i*30)+30), text=text, font=('freemono bold',11),anchor=NW)
+
+    def del_todos(self):
+        self.todos = []
             
 
     
