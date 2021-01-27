@@ -27,27 +27,28 @@ def main():
         status = 1
         if len(todo)==0:
             messagebox.showinfo('Empty Entry', 'Enter task name')
-        try:
-            with connection as con:
-                cur = con.cursor()
-                last = cur.execute("SELECT todo_number FROM todo ORDER BY todo_number DESC LIMIT 1").fetchone()
-                if last is None:
-                    number = 1
-                else:
-                    number = last[0] + 1
-                cur.execute("INSERT INTO todo VALUES (?, ?, ?);", (number, status, todo))
-        except IOError:
-            print("Unable to open database")
-        e1.delete(0,'end')
-        listUpdate()
+        else:
+            try:
+                with connection as con:
+                    cur = con.cursor()
+                    last = cur.execute("SELECT todo_number FROM todo ORDER BY todo_number DESC LIMIT 1").fetchone()
+                    if last is None:
+                        number = 1
+                    else:
+                        number = last[0] + 1
+                    cur.execute("INSERT INTO todo VALUES (?, ?, ?);", (number, status, todo))
+            except IOError:
+                print("Unable to open database")
+            e1.delete(0,'end')
+            listUpdate()
     
     def listUpdate():
         todo_list.del_todos()
         draw_canvas()
 
     def read_file():
-        done = "[x]"
-        undone = "[ ]"
+        done = "closed"
+        undone = "open"
         try:
             with connection as con:
                 cur = con.cursor()
