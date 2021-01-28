@@ -15,29 +15,38 @@ class Todo_list():
 
         self.root = Tk()
         self.root.title("Tom's todo App")
-        self.canvas = Canvas(self.root, width=800, height=800)   
+        self.canvas = Canvas(self.root, width=800, height=800)  
         entry1 = ttk.Entry(self.root)
         label1 = ttk.Label(self.root, text = '< Name of the label >')
         l1 = ttk.Label(self.root, text = 'To-Do List', font=('freemono bold',20),anchor=NW)
         l2 = ttk.Label(self.root, text='Enter task title: ')
+        l3 = ttk.Label(self.root, text = "These are your todos so far:",font=('Arial',15),anchor=NW)
         self.e1 = ttk.Entry(self.root, width=80)
         b1 = ttk.Button(self.root, text='Add task', width=50, command=self.write_file)
         b3 = ttk.Button(self.root, text='Delete all', width=50, command=self.delete_all)
         b4 = ttk.Button(self.root, text='Exit', width=50, command=self.bye)
         l2.place(x=80, y=50)
+        l3.place(x=80, y=200)
         self.e1.place(x=80, y=80)
         b1.place(x=80, y=110)
         b3.place(x=80, y=140)
         b4.place(x=400, y =140)
         l1.place(x=80, y=10)
-        
         self.read_file()
         self.draw()
+        self.root.bind_all('<Key>', self.on_key_press)
         
+
+    def on_key_press(self,e):
+        if e.keycode == 27:               
+            self.root.destroy()
+        elif e.keycode == 13:
+            self.write_file()
+
         
     def write_file(self):
         todo = self.e1.get()
-        status = 1
+        status = 0
         if len(todo)==0:
             messagebox.showinfo('Empty Entry', 'Enter task name')
         else:
@@ -59,17 +68,13 @@ class Todo_list():
     
 
     def read_file(self):
-        done = "closed"
-        undone = "open"
         try:
             with self.connection as con:
                 cur = con.cursor()
                 rows = cur.execute("SELECT todo_number, todo_status, todo_text FROM todo").fetchall()
-                print(rows)
                 for i in rows:
                     if len(rows) > 0:
-                        symbol = undone if i[1] == 1 else done
-                        todo = Todo(i[0], symbol, i[2])
+                        todo = Todo(i[0], i[1], i[2])
                         self.todos.append(todo)
         except IOError:
             print("Unable to open database")
@@ -89,34 +94,38 @@ class Todo_list():
 
     def draw(self):
         for i, todo in enumerate(self.todos):
-            text = f"No.:{todo.todo_number} | Status: {todo.todo_status} | Todo: {todo.todo_text}"
-            canvas_text = self.canvas.create_text((80, (i*30)+200), text=text, font=('Arial',11),anchor=NW)
-            button = Button(text = "Done", command = lambda i=todo.todo_number: self.update(i), anchor = W)
+            btnname = "To Progress" if todo.todo_status == 0 else "To Done" if todo.todo_status == 1 else "Ready"
+            text1 = "OPEN" if todo.todo_status == 0 else "IN PROGRESS" if todo.todo_status == 1 else "READY"
+            text = f"No.:{todo.todo_number} | Status: {text1} | Todo: {todo.todo_text}"
+            canvas_text = self.canvas.create_text((80, (i*30)+250), text=text, font=('Arial',11),anchor=NW)
+            button = Button(text = btnname, command = lambda i = todo.todo_number, j = todo.todo_status: self.update(i,j), anchor = W)
             button.configure(width = 10, activebackground = "#33B5E5", relief = FLAT)
-            button_window = self.canvas.create_window(650, (i*30)+200, anchor=NW, window=button)
-            button = Button(text = "Delete", command = lambda i=todo.todo_number: self.delete(i), anchor = W)
+            button_window = self.canvas.create_window(620, (i*30)+250, anchor=NW, window=button)
+            button = Button(text = "Delete", command = lambda i=todo.todo_number, j = todo.todo_status: self.delete(i,j), anchor = W)
             button.configure(width = 10, activebackground = "#33B5E5", relief = FLAT)
-            button_window = self.canvas.create_window(700, (i*30)+200, anchor=NW, window=button)
+            button_window = self.canvas.create_window(700, (i*30)+250, anchor=NW, window=button)
         
 
-    def delete(self, i):
-        try:
-            with self.connection as con:
-                cur = con.cursor()
-                cur.execute("DELETE from todo WHERE todo_number = ?",(i,))
-        except IOError:
-            print("Unable to open database")
-        self.todos = []
-        self.canvas.delete("all")
-        self.read_file()
-        self.draw()
+    def delete(self, i,j):
+        if j < 2:
+            messagebox.showinfo('Todo not ready', 'Only ready todo can be deleted')
+        else:
+            try:
+                with self.connection as con:
+                    cur = con.cursor()
+                    cur.execute("DELETE from todo WHERE todo_number = ?",(i,))
+            except IOError:
+                print("Unable to open database")
+            self.todos = []
+            self.canvas.delete("all")
+            self.read_file()
+            self.draw()
 
-    def update(self,i):
+    def update(self,i,j):
         try:
             with self.connection as con:
                 cur = con.cursor()
-                print(i)
-                cur.execute("UPDATE todo SET todo_status = 0 WHERE todo_number = ?",(i,))
+                cur.execute("UPDATE todo SET todo_status = ? WHERE todo_number = ?",(j+1, i,))
         except IOError:
             print("Unable to open database")
         self.todos = []
